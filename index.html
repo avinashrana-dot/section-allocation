@@ -25,22 +25,31 @@
 <body>
 
 <div class="card">
-    <!-- Jain University Logo (Place logo.png in your GitHub repo or change source) -->
     <img src="logo.png" alt="Jain University Logo" class="logo" onerror="this.style.display='none'">
     <h2>Specialisation Section Allocation</h2>
     <div id="alert-box"></div>
 
-    <!-- Step 1: USN Visible Entry -->
-    <div id="step-usn-1" class="form-group">
-        <label>Enter your USN Number:</label>
-        <input type="text" id="usn-input-1" placeholder="e.g., 1DS21CS001">
+    <!-- Step 1: Student Name & USN Visible Entry -->
+    <div id="step-usn-1">
+        <div class="form-group">
+            <label>Full Name:</label>
+            <input type="text" id="name-input" placeholder="e.g., Rahul Sharma">
+        </div>
+        <div class="form-group">
+            <label>USN Number:</label>
+            <input type="text" id="usn-input-1" placeholder="e.g., 1DS21CS001">
+        </div>
         <button onclick="proceedToVerify()">Next</button>
     </div>
 
-    <!-- Step 2: USN Blind/Confirmation Entry with Visible First Entry -->
+    <!-- Step 2: Blind/Confirmation Entry with Visible Review -->
     <div id="step-usn-2" class="hidden">
         <div class="form-group">
-            <label>First USN Entry (For your review):</label>
+            <label>Student Name (Review):</label>
+            <input type="text" id="display-name-review" disabled style="background: #e9ecef;">
+        </div>
+        <div class="form-group">
+            <label>First USN Entry (Review):</label>
             <input type="text" id="display-usn-review" disabled style="background: #e9ecef;">
         </div>
         <div class="form-group">
@@ -56,6 +65,10 @@
 
     <!-- Step 3: Selection Form -->
     <div id="step-selection" class="hidden">
+        <div class="form-group">
+            <label>Student Name:</label>
+            <input type="text" id="display-name" disabled style="background: #e9ecef;">
+        </div>
         <div class="form-group">
             <label>Verified USN:</label>
             <input type="text" id="display-usn" disabled style="background: #e9ecef;">
@@ -79,6 +92,7 @@
     <div id="step-success" class="hidden">
         <div class="success">
             <h3 style="text-align: center;">Allocation Successful!</h3>
+            <p><strong>Name:</strong> <span id="conf-name"></span></p>
             <p><strong>USN:</strong> <span id="conf-usn"></span></p>
             <p><strong>Specialisation:</strong> <span id="conf-spec"></span></p>
             <p><strong>Assigned Section:</strong> <span id="conf-sec"></span></p>
@@ -93,6 +107,7 @@
     const WEB_APP_URL = "https://script.google.com/a/macros/jainuniversity.ac.in/s/AKfycbztQvgcV8VdMLAtgZ2FgrBvshuB__Wke7Qj729h6b_G8ocUjT1OJJvfbY2t8xzBc0gU/exec";
 
     let globalUSN = "";
+    let globalName = "";
     let sectionData = [];
 
     async function loadSections() {
@@ -114,13 +129,23 @@
     }
 
     function proceedToVerify() {
+        let name = document.getElementById("name-input").value.trim();
         let usn1 = document.getElementById("usn-input-1").value.trim();
+        
+        if(!name) {
+            showAlert("Please enter your full name.");
+            return;
+        }
         if(!usn1) {
             showAlert("Please enter a valid USN.");
             return;
         }
+
+        globalName = name;
         globalUSN = usn1;
+
         document.getElementById("alert-box").innerHTML = "";
+        document.getElementById("display-name-review").value = globalName;
         document.getElementById("display-usn-review").value = globalUSN;
         document.getElementById("step-usn-1").classList.add("hidden");
         document.getElementById("step-usn-2").classList.remove("hidden");
@@ -134,6 +159,8 @@
 
     function retryStep1() {
         globalUSN = "";
+        globalName = "";
+        document.getElementById("name-input").value = "";
         document.getElementById("usn-input-1").value = "";
         document.getElementById("usn-input-2").value = "";
         document.getElementById("alert-box").innerHTML = "";
@@ -150,6 +177,7 @@
         document.getElementById("alert-box").innerHTML = "";
         document.getElementById("step-usn-2").classList.add("hidden");
         document.getElementById("step-selection").classList.remove("hidden");
+        document.getElementById("display-name").value = globalName;
         document.getElementById("display-usn").value = globalUSN;
         loadSections();
     }
@@ -186,6 +214,7 @@
 
         let payload = {
             usn: globalUSN,
+            studentName: globalName,
             specialisation: spec,
             section: sec
         };
@@ -198,6 +227,7 @@
             let result = await res.json();
 
             if(result.status === "success") {
+                document.getElementById("conf-name").textContent = globalName;
                 document.getElementById("conf-usn").textContent = globalUSN;
                 document.getElementById("conf-spec").textContent = spec;
                 document.getElementById("conf-sec").textContent = sec;
