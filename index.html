@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specialisation & Section Allocation Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: #333; text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .hidden { display: none; }
+        .error { color: #d9534f; background: #f2dede; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+        .success { color: #28a745; background: #d4edda; padding: 15px; border-radius: 4px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Specialisation Section Allocation</h2>
+    <div id="alert-box"></div>
+
+    <!-- Step 1: USN Visible Entry -->
+    <div id="step-usn-1" class="form-group">
+        <label>Enter your USN Number:</label>
+        <input type="text" id="usn-input-1" placeholder="e.g., 1DS21CS001">
+        <button onclick="proceedToVerify()" style="margin-top: 10px;">Next</button>
+    </div>
+
+    <!-- Step 2: USN Blind/Confirmation Entry -->
+    <div id="step-usn-2" class="form-group hidden">
+        <label>Re-enter your USN Number (Blind Verification):</label>
+        <input type="password" id="usn-input-2" placeholder="Re-type USN to confirm">
+        <button onclick="verifyAndUnlockPortal()" style="margin-top: 10px;">Verify & Continue</button>
+    </div>
+
+    <!-- Step 3: Selection Form -->
+    <div id="step-selection" class="hidden">
+        <div class="form-group">
+            <label>Verified USN:</label>
+            <input type="text" id="display-usn" disabled style="background: #e9ecef;">
+        </div>
+        <div class="form-group">
+            <label>Choose Specialisation:</label>
+            <select id="spec-select" onchange="updateSections()">
+                <option value="">-- Select Specialisation --</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Choose Section:</label>
+            <select id="sec-select">
+                <option value="">-- Select Section --</option>
+            </select>
+        </div>
+        <button onclick="submitChoice()">Lock My Section</button>
+    </div>
+
+    <!-- Step 4: Confirmation Receipt -->
+    <div id="step-success" class="hidden">
+        <div class="success">
+            <h3>Allocation Successful!</h3>
+            <p><strong>USN:</strong> <span id="conf-usn"></span></p>
+            <p><strong>Specialisation:</strong> <span id="conf-spec"></span></p>
+            <p><strong>Assigned Section:</strong> <span id="conf-sec"></span></p>
+            <p><strong>Timestamp:</strong> <span id="conf-time"></span></p>
+            <p style="font-size: 12px; color: #666; margin-top: 15px;">Please take a screenshot of this receipt for your records. You cannot change this choice.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
+    const WEB_APP_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+    let globalUSN = "";
+    let sectionData = [];
+
+    async function loadSections() {
+        try {
+            let response = await fetch(`${WEB_APP_URL}?action=getSections`);
+            sectionData = await response.json();
+            
+            let specs = [...new Set(sectionData.map(item => item.specialisation))];
+            let specSelect = document.getElementById("spec-select");
+            specs.forEach(s => {
+                let opt = document.createElement("option");
+                opt.value = s;
+                opt.textContent = s;
+                specSelect.appendChild(opt);
+            });
+        } catch (err) {
+            showAlert("Failed to load portal configuration. Please check network/backend connection.");
+        }
+    }
+
+    function proceedToVerify() {
+        let usn1 = document.getElementById("usn-input-1").value.trim();
+        if(!usn1) {
+            showAlert("Please enter a valid USN.");
+            return;
+        }
+        globalUSN = usn1;
+        document.getElementById("alert-box").innerHTML = "";
+        document.getElementById("step-usn-1").classList.add("hidden");
+        document.getElementById("step-usn-2").classList.remove("hidden");
+    }
+
+    function verifyAndUnlockPortal() {
+        let usn2 = document.getElementById("usn-input-2").value.trim();
+        if(usn2 !== globalUSN) {
+            showAlert("USN does not match! Please re-verify carefully.");
+            return;
+        }
+        document.getElementById("alert-box").innerHTML = "";
+        document.getElementById("step-usn-2").classList.add("hidden");
+        document.getElementById("step-selection").classList.remove("hidden");
+        document.getElementById("display-usn").value = globalUSN;
+        loadSections();
+    }
+
+    function updateSections() {
+        let selectedSpec = document.getElementById("spec-select").value;
+        let secSelect = document.getElementById("sec-select");
+        secSelect.innerHTML = '<option value="">-- Select Section --</option>';
+
+        let filtered = sectionData.filter(item => item.specialisation === selectedSpec);
+        filtered.forEach(item => {
+            let opt = document.createElement("option");
+            opt.value = item.section;
+            // Show availability notice if full
+            if (item.current >= item.max) {
+                opt.textContent = `${item.section} (FULL)`;
+                opt.disabled = true;
+            } else {
+                opt.textContent = `${item.section} (${item.max - item.current} seats left)`;
+            }
+            secSelect.appendChild(opt);
+        });
+    }
+
+    async function submitChoice() {
+        let spec = document.getElementById("spec-select").value;
+        let sec = document.getElementById("sec-select").value;
+
+        if(!spec || !sec) {
+            showAlert("Please choose both a specialisation and a section.");
+            return;
+        }
+
+        if(!confirm("Are you sure? Once locked, you CANNOT change your section.")) return;
+
+        let payload = {
+            usn: globalUSN,
+            specialisation: spec,
+            section: sec
+        };
+
+        try {
+            let res = await fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            let result = await res.json();
+
+            if(result.status === "success") {
+                document.getElementById("conf-usn").textContent = globalUSN;
+                document.getElementById("conf-spec").textContent = spec;
+                document.getElementById("conf-sec").textContent = sec;
+                document.getElementById("conf-time").textContent = result.timestamp;
+
+                document.getElementById("step-selection").classList.add("hidden");
+                document.getElementById("step-success").classList.remove("hidden");
+            } else {
+                showAlert(result.message);
+            }
+        } catch(err) {
+            showAlert("Submission failed. Please try again.");
+        }
+    }
+
+    function showAlert(msg) {
+        document.getElementById("alert-box").innerHTML = `<div class="error">${msg}</div>`;
+    }
+</script>
+
+</body>
+</html>
