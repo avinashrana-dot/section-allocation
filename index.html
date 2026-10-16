@@ -3,18 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Specialisation & Section Allocation Portal - Jain University</title>
+    <title>Specialisation Section Allocation Portal - Jain University</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .card { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
         .logo { max-width: 150px; height: auto; margin-bottom: 15px; }
         h2 { color: #333; margin-bottom: 20px; }
+        .nav-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .nav-btn { background: none; border: none; font-size: 14px; font-weight: bold; color: #6c757d; cursor: pointer; padding: 5px 10px; }
+        .nav-btn.active { color: #007bff; border-bottom: 2px solid #007bff; }
         .form-group { margin-bottom: 15px; text-align: left; }
         label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 5px; }
-        button:hover { background: #0056b3; }
-        .btn-secondary { background: #6c757d; }
+        button.primary-btn { background: #007bff; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 5px; }
+        button.primary-btn:hover { background: #0056b3; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 16px; cursor: pointer; }
         .btn-secondary:hover { background: #5a6268; }
         .button-group { display: flex; gap: 10px; }
         .hidden { display: none; }
@@ -26,80 +29,111 @@
 
 <div class="card">
     <img src="logo.png" alt="Jain University Logo" class="logo" onerror="this.style.display='none'">
-    <h2>Specialisation Section Allocation</h2>
+    <h2>Specialisation Section Portal</h2>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="nav-btn active" id="tab-allocate" onclick="switchView('allocate')">Section Allocation</button>
+        <button class="nav-btn" id="tab-status" onclick="switchView('status')">Check Status</button>
+    </div>
+
     <div id="alert-box"></div>
 
-    <!-- Step 1: Student Name & USN Visible Entry -->
-    <div id="step-usn-1">
-        <div class="form-group">
-            <label>Full Name:</label>
-            <input type="text" id="name-input" placeholder="e.g., Rahul Sharma">
+    <!-- VIEW 1: ALLOCATION PORTAL -->
+    <div id="view-allocate">
+        <!-- Step 1: Student Name & USN Visible Entry -->
+        <div id="step-usn-1">
+            <div class="form-group">
+                <label>Full Name:</label>
+                <input type="text" id="name-input" placeholder="e.g., Rahul Sharma">
+            </div>
+            <div class="form-group">
+                <label>USN Number:</label>
+                <input type="text" id="usn-input-1" placeholder="e.g., 1DS21CS001">
+            </div>
+            <button class="primary-btn" onclick="proceedToVerify()">Next</button>
         </div>
-        <div class="form-group">
-            <label>USN Number:</label>
-            <input type="text" id="usn-input-1" placeholder="e.g., 26MBAR0000">
+
+        <!-- Step 2: Blind/Confirmation Entry with Visible Review -->
+        <div id="step-usn-2" class="hidden">
+            <div class="form-group">
+                <label>Student Name (Review):</label>
+                <input type="text" id="display-name-review" disabled style="background: #e9ecef;">
+            </div>
+            <div class="form-group">
+                <label>First USN Entry (Review):</label>
+                <input type="text" id="display-usn-review" disabled style="background: #e9ecef;">
+            </div>
+            <div class="form-group">
+                <label>Re-enter your USN Number (Blind Verification):</label>
+                <input type="password" id="usn-input-2" placeholder="Re-type USN to confirm">
+            </div>
+            <button class="primary-btn" onclick="verifyAndUnlockPortal()">Verify & Continue</button>
+            <div class="button-group" style="margin-top: 10px;">
+                <button onclick="goBackToStep1()" class="btn-secondary" style="width: 50%;">Back</button>
+                <button onclick="retryStep1()" class="btn-secondary" style="width: 50%; background: #d9534f;">Retry</button>
+            </div>
         </div>
-        <button onclick="proceedToVerify()">Next</button>
+
+        <!-- Step 3: Selection Form -->
+        <div id="step-selection" class="hidden">
+            <div class="form-group">
+                <label>Student Name:</label>
+                <input type="text" id="display-name" disabled style="background: #e9ecef;">
+            </div>
+            <div class="form-group">
+                <label>Verified USN:</label>
+                <input type="text" id="display-usn" disabled style="background: #e9ecef;">
+            </div>
+            <div class="form-group">
+                <label>Choose Specialisation:</label>
+                <select id="spec-select" onchange="updateSections()">
+                    <option value="">-- Select Specialisation --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Choose Section:</label>
+                <select id="sec-select">
+                    <option value="">-- Select Section --</option>
+                </select>
+            </div>
+            <button class="primary-btn" onclick="submitChoice()">Lock My Section</button>
+        </div>
+
+        <!-- Step 4: Confirmation Receipt -->
+        <div id="step-success" class="hidden">
+            <div class="success">
+                <h3 style="text-align: center;">Allocation Successful!</h3>
+                <p><strong>Name:</strong> <span id="conf-name"></span></p>
+                <p><strong>USN:</strong> <span id="conf-usn"></span></p>
+                <p><strong>Specialisation:</strong> <span id="conf-spec"></span></p>
+                <p><strong>Assigned Section:</strong> <span id="conf-sec"></span></p>
+                <p><strong>Timestamp:</strong> <span id="conf-time"></span></p>
+                <p style="font-size: 12px; color: #666; margin-top: 15px; text-align: center;">Please take a screenshot of this receipt for your records. You cannot change this choice.</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Step 2: Blind/Confirmation Entry with Visible Review -->
-    <div id="step-usn-2" class="hidden">
+    <!-- VIEW 2: CHECK STATUS PORTAL -->
+    <div id="view-status" class="hidden">
         <div class="form-group">
-            <label>Student Name (Review):</label>
-            <input type="text" id="display-name-review" disabled style="background: #e9ecef;">
+            <label>Enter USN to Check Status:</label>
+            <input type="text" id="status-usn-input" placeholder="e.g., 1DS21CS001">
         </div>
-        <div class="form-group">
-            <label>First USN Entry (Review):</label>
-            <input type="text" id="display-usn-review" disabled style="background: #e9ecef;">
-        </div>
-        <div class="form-group">
-            <label>Re-enter your USN Number (Blind Verification):</label>
-            <input type="password" id="usn-input-2" placeholder="Re-type USN to confirm">
-        </div>
-        <button onclick="verifyAndUnlockPortal()">Verify & Continue</button>
-        <div class="button-group" style="margin-top: 10px;">
-            <button onclick="goBackToStep1()" class="btn-secondary">Back</button>
-            <button onclick="retryStep1()" class="btn-secondary" style="background: #d9534f;">Retry / Clear</button>
+        <button class="primary-btn" onclick="checkStudentStatus()">Check Status</button>
+
+        <div id="status-result-box" class="hidden" style="margin-top: 20px;">
+            <div class="success">
+                <h3 style="text-align: center;">Allocation Details Found</h3>
+                <p><strong>Name:</strong> <span id="stat-name"></span></p>
+                <p><strong>USN:</strong> <span id="stat-usn"></span></p>
+                <p><strong>Specialisation:</strong> <span id="stat-spec"></span></p>
+                <p><strong>Assigned Section:</strong> <span id="stat-sec"></span></p>
+                <p><strong>Allocated At:</strong> <span id="stat-time"></span></p>
+            </div>
         </div>
     </div>
 
-    <!-- Step 3: Selection Form -->
-    <div id="step-selection" class="hidden">
-        <div class="form-group">
-            <label>Student Name:</label>
-            <input type="text" id="display-name" disabled style="background: #e9ecef;">
-        </div>
-        <div class="form-group">
-            <label>Verified USN:</label>
-            <input type="text" id="display-usn" disabled style="background: #e9ecef;">
-        </div>
-        <div class="form-group">
-            <label>Choose Specialisation:</label>
-            <select id="spec-select" onchange="updateSections()">
-                <option value="">-- Select Specialisation --</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Choose Section:</label>
-            <select id="sec-select">
-                <option value="">-- Select Section --</option>
-            </select>
-        </div>
-        <button onclick="submitChoice()">Lock My Section</button>
-    </div>
-
-    <!-- Step 4: Confirmation Receipt -->
-    <div id="step-success" class="hidden">
-        <div class="success">
-            <h3 style="text-align: center;">Allocation Successful!</h3>
-            <p><strong>Name:</strong> <span id="conf-name"></span></p>
-            <p><strong>USN:</strong> <span id="conf-usn"></span></p>
-            <p><strong>Specialisation:</strong> <span id="conf-spec"></span></p>
-            <p><strong>Assigned Section:</strong> <span id="conf-sec"></span></p>
-            <p><strong>Timestamp:</strong> <span id="conf-time"></span></p>
-            <p style="font-size: 12px; color: #666; margin-top: 15px; text-align: center;">Please take a screenshot of this receipt for your records. You cannot change this choice.</p>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -110,6 +144,21 @@
     let globalName = "";
     let sectionData = [];
 
+    function switchView(view) {
+        document.getElementById("alert-box").innerHTML = "";
+        if (view === 'allocate') {
+            document.getElementById("tab-allocate").classList.add("active");
+            document.getElementById("tab-status").classList.remove("active");
+            document.getElementById("view-allocate").classList.remove("hidden");
+            document.getElementById("view-status").classList.add("hidden");
+        } else {
+            document.getElementById("tab-status").classList.add("active");
+            document.getElementById("tab-allocate").classList.remove("active");
+            document.getElementById("view-status").classList.remove("hidden");
+            document.getElementById("view-allocate").classList.add("hidden");
+        }
+    }
+
     async function loadSections() {
         try {
             let response = await fetch(`${WEB_APP_URL}?action=getSections`);
@@ -117,6 +166,7 @@
             
             let specs = [...new Set(sectionData.map(item => item.specialisation))];
             let specSelect = document.getElementById("spec-select");
+            specSelect.innerHTML = '<option value="">-- Select Specialisation --</option>';
             specs.forEach(s => {
                 let opt = document.createElement("option");
                 opt.value = s;
@@ -240,6 +290,36 @@
             }
         } catch(err) {
             showAlert("Submission failed. Please try again.");
+        }
+    }
+
+    async function checkStudentStatus() {
+        let usn = document.getElementById("status-usn-input").value.trim();
+        if(!usn) {
+            showAlert("Please enter a valid USN to check status.");
+            return;
+        }
+
+        document.getElementById("alert-box").innerHTML = "";
+        document.getElementById("status-result-box").classList.add("hidden");
+
+        try {
+            let res = await fetch(`${WEB_APP_URL}?action=checkStatus&usn=${encodeURIComponent(usn)}`);
+            let result = await res.json();
+
+            if(result.status === "found") {
+                document.getElementById("stat-name").textContent = result.studentName;
+                document.getElementById("stat-usn").textContent = result.usn;
+                document.getElementById("stat-spec").textContent = result.specialisation;
+                document.getElementById("stat-sec").textContent = result.section;
+                document.getElementById("stat-time").textContent = result.timestamp;
+
+                document.getElementById("status-result-box").classList.remove("hidden");
+            } else {
+                showAlert(result.message);
+            }
+        } catch (err) {
+            showAlert("Failed to query status. Please try again.");
         }
     }
 
