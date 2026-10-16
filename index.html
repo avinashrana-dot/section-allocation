@@ -41,7 +41,6 @@
 
     <!-- VIEW 1: ALLOCATION PORTAL -->
     <div id="view-allocate">
-        <!-- Step 1: Student Name & USN Visible Entry -->
         <div id="step-usn-1">
             <div class="form-group">
                 <label>Full Name:</label>
@@ -49,12 +48,11 @@
             </div>
             <div class="form-group">
                 <label>USN Number:</label>
-                <input type="text" id="usn-input-1" placeholder="e.g., 1DS21CS001">
+                <input type="text" id="usn-input-1" placeholder="e.g., JU26MBAR0000">
             </div>
             <button class="primary-btn" onclick="proceedToVerify()">Next</button>
         </div>
 
-        <!-- Step 2: Blind/Confirmation Entry with Visible Review -->
         <div id="step-usn-2" class="hidden">
             <div class="form-group">
                 <label>Student Name (Review):</label>
@@ -75,7 +73,6 @@
             </div>
         </div>
 
-        <!-- Step 3: Selection Form -->
         <div id="step-selection" class="hidden">
             <div class="form-group">
                 <label>Student Name:</label>
@@ -100,7 +97,6 @@
             <button class="primary-btn" onclick="submitChoice()">Lock My Section</button>
         </div>
 
-        <!-- Step 4: Confirmation Receipt -->
         <div id="step-success" class="hidden">
             <div class="success">
                 <h3 style="text-align: center;">Allocation Successful!</h3>
@@ -138,7 +134,7 @@
 
 <script>
     // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz0zODTgVrRsVUjng0Z2mwkE-sP8r9NLrRcNL2JNKbmmOYsoGjbA_cPcpo0-jT93F9h/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyMwQnFW-mWkg58UBpjduXfJMwSbDh61Io-xQAi7VvYBHecrZu9_r6a6sDPp6aPU3kR/exec";
 
     let globalUSN = "";
     let globalName = "";
@@ -303,8 +299,16 @@
         document.getElementById("alert-box").innerHTML = "";
         document.getElementById("status-result-box").classList.add("hidden");
 
+        let payload = {
+            action: "checkStatus",
+            usn: usn
+        };
+
         try {
-            let res = await fetch(`${WEB_APP_URL}?action=checkStatus&usn=${encodeURIComponent(usn)}`);
+            let res = await fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
             let result = await res.json();
 
             if(result.status === "found") {
