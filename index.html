@@ -63,7 +63,7 @@
                 <input type="text" id="display-usn-review" disabled style="background: #e9ecef;">
             </div>
             <div class="form-group">
-                <label>Re-enter your USN Number (Blind Verification):</label>
+                <label>Re-enter your Roll Number :</label>
                 <input type="password" id="usn-input-2" placeholder="Re-type USN to confirm">
             </div>
             <button class="primary-btn" onclick="verifyAndUnlockPortal()">Verify & Continue</button>
@@ -113,7 +113,7 @@
     <!-- VIEW 2: CHECK STATUS PORTAL -->
     <div id="view-status" class="hidden">
         <div class="form-group">
-            <label>Enter USN to Check Status:</label>
+            <label>Enter Roll No. to Check Status:</label>
             <input type="text" id="status-usn-input" placeholder="e.g., 1DS21CS001">
         </div>
         <button class="primary-btn" onclick="checkStudentStatus()">Check Status</button>
@@ -183,7 +183,7 @@
             return;
         }
         if(!usn1) {
-            showAlert("Please enter a valid USN.");
+            showAlert("Please enter a valid Roll No.");
             return;
         }
 
@@ -292,7 +292,7 @@
     async function checkStudentStatus() {
         let usn = document.getElementById("status-usn-input").value.trim();
         if(!usn) {
-            showAlert("Please enter a valid USN to check status.");
+            showAlert("Please enter a valid Roll No. to check status.");
             return;
         }
 
